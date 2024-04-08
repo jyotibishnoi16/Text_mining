@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
+## This code analyse about 9000 tweets related to climate change by identifying sentiments of these tweets, frequently occurring words and finally predicting number of likes probable to be received on a tweet based on machine learning models ##
 
-# ### Import Libraries
-
-# In[1]:
-
+# Import libraries
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,11 +8,6 @@ import matplotlib as mpl
 import numpy as np
 import re
 import string
-
-
-# In[2]:
-
-
 import nltk
 
 nltk.download(["names", "stopwords","state_union","twitter_samples",
@@ -26,98 +17,44 @@ nltk.download('omw-1.4')
 
 
 # ### Read the Climate change data
-
-# In[3]:
-
-
-df = pd.read_csv('/Users/jyotismac/Desktop/Climate change.csv')
-
+df = pd.read_csv('filepath')
 
 # # I. Data Exploration
-
-# In[4]:
-
 
 # check first few observations
 df.head()
 
-
-# In[5]:
-
-
 # check last few observations
 df.tail()
-
-
-# In[6]:
-
 
 # check shape of data i.e number of records and columns
 df.shape
 
-
-# In[7]:
-
-
 #check if any missing value in any variable
 df.isnull().any()
 
-
-# In[8]:
-
-
-# check the data type of each column, number of columns, memory usage, 
-# and the number of records in the dataset
-
+# check the data type of each column, number of columns, memory usage,and the number of records in the dataset
 df.info()
 
-
-# In[9]:
-
-
 #identifying missing value in specific variables as observed in previous step
-
 likes_nan_count=df['Likes'].isna().sum()
 retweets_nan_count=df['Retweets'].isna().sum()
 
 print("The number of missing values in Likes column is: " + str(likes_nan_count))
 print("The number of missing values in Retweets column is: " + str(retweets_nan_count))
 
-
-# In[10]:
-
-
 # Check summary of the dataset
 df.describe()
 
-
-# In[11]:
-
-
 # check summary of the dataset- categorical variables
 # https://stackoverflow.com/questions/64223060/summary-of-categorical-variables-pandas
-
 df.describe(include= 'object')
-
-
-# # II. DATA PREPROCESSING
-
-# In[12]:
-
 
 # create a copy of data to extract number of comments from Embedded_text column
 df_1 = df.copy()
 
-
-# In[13]:
-
-
 # removing all the commas from the embedded text column
 df_1['Embedded_text'] = df_1['Embedded_text'].str.replace(',', '')
-
-
-# In[14]:
-
 
 # Extract the comment numbers and create new columns
 # code source and modified - https://pandas.pydata.org/docs/reference/api/pandas.Series.str.extract.html
@@ -125,92 +62,39 @@ df_1[['comments', 'likes', 'retweets']] = df_1['Embedded_text'].str.extract(r'(\
 
 df_1.head()
 
-
-# In[15]:
-
-
 # attaching comments column to original dataset
 
 df['comments']=df_1['comments']
 df.head()
 
-
-# In[16]:
-
-
 # replacing null values in comments column with 0
-
 df['comments'] = df['comments'].fillna(0).astype(int)
 
-
-# In[17]:
-
-
 # creating duplicate data set to clean it
-
 df_clean = df.copy()
-
-
-# In[18]:
-
-
 df_clean.isnull().any()
-
-
-# In[19]:
-
 
 import contractions
 
 # applying contractions to expand the contracted words
 # Code source & modified- https://www.geeksforgeeks.org/nlp-expand-contractions-in-text-processing/
-
 df_clean['Embedded_text'] = df['Embedded_text'].apply(lambda x: contractions.fix(x))
 df_clean['Embedded_text']
 
-
-# In[20]:
-
-
 # Dropping null values in Likes column 
-
 df_clean = df_clean.dropna(axis = 0,subset = ['Likes']) 
 
-
-# In[21]:
-
-
 # Dropping null values in Retweets column 
-
 df_clean = df_clean.dropna(axis = 0,subset = ['Retweets']) 
 
-
-# In[22]:
-
-
 # creating instance for storing stopwords of english language
-
 stopwords = nltk.corpus.stopwords.words("english")
 
-
-# In[23]:
-
-
 # removing commas from Likes column
-
 df_clean['Likes'] = df_clean['Likes'].str.replace(',', '')
 
-
-# In[24]:
-
-
 # removing commas from Retweets column
-
 df_clean['Retweets'] = df_clean['Retweets'].str.replace(',', '')
-
-
-# In[25]:
-
 
 # creating a function to change K into 1000 for likes and retweets columns
 # code source & modify- https://gist.github.com/gajeshbhat/67a3db79a6aecd1db42343190f9a2f17
@@ -220,54 +104,25 @@ def convert_k(val):
     else:
         return int(float(val))
 
-
-# In[26]:
-
-
 # applying above function to Likes and Retweets column and creating two new columns
-
 df_clean['Likes_new'] = df_clean['Likes'].apply(convert_k)
 df_clean['Retweets_new'] = df_clean['Retweets'].apply(convert_k)
 
-
-# In[27]:
-
-
 #check applicability of convert_k function
-
 df_clean['Retweets_new']
-
-
-# In[28]:
-
 
 #check applicability of convert_k function
 df_clean['Likes_new']
 
-
-# In[29]:
-
-
 # dropping original likes and retweets columns
-
 df_clean = df_clean.drop(['Likes', 'Retweets'], axis=1)
 
-
-# In[30]:
-
-
 # removing outliers in comments column
-
 df_clean = df_clean[df_clean['comments'] <= 6500]
 
-
-# In[31]:
-
-
 # Define a function to clean and preprocess a tweet
-
 def clean_tweet(tweet):
-   
+  
     # Convert to lowercase
     tweet = tweet.lower()
     
@@ -304,86 +159,37 @@ def clean_tweet(tweet):
     
     return tweet
 
-
-# In[32]:
-
-
 # Apply the clean_tweet() function to the embedded_text column
-
 df_clean['clean_text'] = df_clean['Embedded_text'].apply(clean_tweet)
-
-
-# In[33]:
-
-
 df_clean['clean_text']
 
-
-# In[34]:
-
-
 ##length of messages- character length
-
 df_clean['length'] = df_clean['clean_text'].apply(len)
 df_clean['length']
 df_clean.head()
 
-
-# In[35]:
-
-
 # length of longest tweet
-
 max_length = max(df_clean['length'])
 print("Length of longest text in 'clean_text' column:", max_length)
-
-
-# In[36]:
-
 
 # length of shortest tweet
 
 min_length = min(df_clean['length'])
 print("Length of shortest text in 'clean_text' column:", min_length)
 
-
-# In[37]:
-
-
 # create a list of all tweets 
-
 words = df_clean['clean_text'].tolist()
 
-
-# In[38]:
-
-
 # Remove apostrophes from the words
-
 words = [re.sub(r"['‘’`]", "", word) for word in words]
 
-
-# In[39]:
-
-
 # joining all the tweets
-
 words = ' '.join(words)
 
-
-# In[40]:
-
-
 # Tokenize the words
-
 words_token = nltk.word_tokenize(words)
 
-
-# In[41]:
-
-
 # Extract the text of the tweet from the DataFrame
-
 text = df_clean['clean_text']
 
 # Split the text into a list of words
@@ -407,73 +213,29 @@ lowest_word_count = df_clean['word_count'].min()
 # print the highest word count
 print("Lowest word count:", lowest_word_count)
 
-
-# In[42]:
-
-
 # find all tweets with the less than 5 words
 low_word_count = len(df_clean[df_clean['word_count'] < 5])
 
 print("Number of tweets with less than 5 words", low_word_count)
 
-
-# In[43]:
-
-
 # creating frequency distribution
-
 fd = nltk.FreqDist(words_token)
 
 # display top 3 most common words used
 fd.most_common(3)
 
-
-# In[44]:
-
-
 # display top three most common words used in tabular form
 fd.tabulate(3)
 
-
-# ### Two word combinations
-
-# In[45]:
-
-
 bi_finder = nltk.collocations.BigramCollocationFinder.from_words(words_token)
-
-
-# In[46]:
-
-
 bi_finder.ngram_fd.most_common(3)
 
-
 # ### Three word combinations
-
-# In[47]:
-
-
 tri_finder = nltk.collocations.TrigramCollocationFinder.from_words(words_token)
-
-
-# In[48]:
-
-
 tri_finder.ngram_fd.most_common(3)
 
-
 # ### Four word combinations
-
-# In[49]:
-
-
 quad_finder = nltk.collocations.QuadgramCollocationFinder.from_words(words_token)
-
-
-# In[50]:
-
-
 quad_finder.ngram_fd.most_common(3)
 
 
@@ -481,109 +243,56 @@ quad_finder.ngram_fd.most_common(3)
 
 # ### Average Counts
 
-# In[51]:
-
-
 # average number of comments
-
 avg_comments = np.mean(pd.to_numeric(df_clean['comments']))
 print("The average number of comments is: " + str(avg_comments))
 
-
-# In[52]:
-
-
 # average likes
-
 avg_likes = np.mean(df_clean['Likes_new'])
 print("The average number of likes is: " + str(avg_likes))
 
-
-# In[53]:
-
-
 # average retweets
-
 avg_retweets = np.mean(df_clean['Retweets_new'])
 print("The average number of retweets is: " + str(avg_retweets))
 
-
-# In[54]:
-
-
 # Create a bar chart
-
 plt.bar(['Average Likes', 'Average Retweets', 'Average Comments'], [avg_likes, avg_retweets, avg_comments])
 plt.title('Average Likes, Retweets and Comments')
 plt.xlabel('Metrics')
 plt.ylabel('Count')
 plt.show()
 
-
 # ### Frequency Count over period of time
 
-# In[55]:
-
-
 # monthly frequency of tweets
-
 freq_by_month = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.month).count()
 
 # change month numbers to three letter month names
 freq_by_month.index = pd.to_datetime(freq_by_month.index, format='%m').strftime('%b')
 freq_by_month
 
-
-# In[56]:
-
-
 # bar chart of monthly frequency of tweets
-
 freq_by_month.plot(kind='bar', y=['clean_text'], rot=0, color= 'pink')
-
 plt.title('Count by month')
 plt.xlabel('Month')
 plt.ylabel('Count')
 plt.legend(['Tweets'])
 plt.show()
 
-
-# In[57]:
-
-
 # weekly frequency of tweets
-
 freq_by_weekday = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.weekday).count()
 
 # change weekday numbers to three letter weekday names
 freq_by_weekday.index = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-
 freq_by_weekday
 
-
-# In[58]:
-
-
 # daily frequency of tweets
-
 freq_by_day = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.day).count()
-
 freq_by_day
 
-
-# In[59]:
-
-
 # hourly frequency of tweets
-
 freq_by_hour = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.hour).count()
-
 freq_by_hour
-
-
-# In[60]:
-
 
 # Create line plots of frequency of tweets on monthly, weekday, daily and hourly basis
 
@@ -631,11 +340,7 @@ plt.show()
 
 # ### Average counts over period of time
 
-# In[61]:
-
-
 # Average number of likes and retweets on monthly basis
-
 monthly_avg = df_clean.assign(timestamp=pd.to_datetime(df_clean['Timestamp'])).groupby(pd.Grouper(key='timestamp', freq='M'))[['Likes_new', 'Retweets_new']].mean()
 
 # Format the timestamp column to show only the month in three letter format
@@ -644,10 +349,6 @@ monthly_avg.index = monthly_avg.index.strftime('%b')
 # Rename the index column to 'Month'
 monthly_avg.index.name = 'Month'
 monthly_avg
-
-
-# In[62]:
-
 
 # Average number of likes and retweets on days of the week basis
 
@@ -659,12 +360,7 @@ weekday_avg.index = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 # Rename the index column to 'Weekday'
 weekday_avg.index.name = 'Weekday'
-
 weekday_avg
-
-
-# In[63]:
-
 
 # Average number of likes and retweets on days of month basis
 
@@ -676,12 +372,7 @@ daily_avg = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.day).mean(
 
 # Rename the index column to 'Weekday'
 daily_avg.index.name = 'Days'
-
 daily_avg
-
-
-# In[64]:
-
 
 # Average number of likes and retweets on hourly basis
 
@@ -693,12 +384,7 @@ hourly_avg = df_clean.groupby(pd.to_datetime(df_clean['Timestamp']).dt.hour).mea
 
 # Rename the index column to 'Weekday'
 hourly_avg.index.name = 'Days'
-
 hourly_avg
-
-
-# In[65]:
-
 
 # Code source for plotting multiple plots in one outcome- https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
 # Create subplots with three rows and one column
@@ -742,28 +428,15 @@ plt.subplots_adjust(hspace=0.3)
 # Show the plot
 plt.show()
 
-
 # # IV. EXPLORATORY TASKS
 
 # ## Sentiment Analysis
 
-# In[66]:
-
-
 # import library
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-
-# In[67]:
-
-
 # Create an instance of the SentimentIntensityAnalyzer
-
 sia = SentimentIntensityAnalyzer()
-
-
-# In[68]:
-
 
 # Define a function to classify the sentiment of a tweet
 # Code source- https://www.kaggle.com/code/nicolemeinie/sentiment-analysis-twitter-on-climate-change
@@ -778,41 +451,20 @@ def sentiment_class(text):
        return 'neutral'
     return sentiment['compound']
 
-
-# In[69]:
-
-
 # Apply the function to clean_text column of dataset
-
 df_clean['sentiment']= df_clean['clean_text'].apply(sentiment_class)
 
-
-# In[70]:
-
-
 # Define a function to apply the sentiment analyzer to each tweet
-
 def get_sentiment_score(text):
     # Apply the sentiment analyzer to the text
     sentiment_scores = sia.polarity_scores(text)
     # Return the compound score, which ranges from -1 (most negative) to 1 (most positive)
     return sentiment_scores['compound']
 
-
-# In[71]:
-
-
-# Apply the get_sentiment_score function to the 'Cleaned_text' column 
-# and store the result in a new 'Sentiment_score' column
-
+# Apply the get_sentiment_score function to the 'Cleaned_text' column and store the result in a new 'Sentiment_score' column
 df_clean['Sentiment_score'] = df_clean['clean_text'].apply(get_sentiment_score)
 
-
-# In[72]:
-
-
 # Create histogram
-
 plt.hist(df_clean['sentiment'], color='pink', align='mid')
 
 # Get bin counts and centers
@@ -831,60 +483,30 @@ plt.ylabel('Count of tweets')
 # Show the plot
 plt.show()
 
-
-# In[73]:
-
-
 # sentiment count
-
 sentiment_counts = df_clean.groupby('sentiment')['sentiment'].count()
 print(sentiment_counts)
 
-
-# In[74]:
-
-
 # create pie chart with percentages
-
 plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%')
 plt.title('Sentiment Counts')
 plt.show()
 
-
-# In[75]:
-
-
 # Define a function to apply the sentiment analyzer to each tweet to get sentiment score
-
 def get_sentiment_score(text):
     # Apply the sentiment analyzer to the text
     sentiment_scores = sia.polarity_scores(text)
     # Return the compound score, which ranges from -1 (most negative) to 1 (most positive)
     return sentiment_scores['compound']
 
-
-# In[76]:
-
-
 # Apply the get_sentiment_score function to the 'clean_text' column and store the result in a new 'Sentiment_score' column
-
 df_clean['Sentiment_score'] = df_clean['clean_text'].apply(get_sentiment_score)
 
-
-# In[77]:
-
-
 #  visualize the sentiment scores
-
 plt.hist(df_clean['Sentiment_score'])
 plt.show()
 
-
 # ## Wordcloud
-
-# In[78]:
-
-
 from wordcloud import WordCloud
 # Code source-  https://www.datacamp.com/tutorial/wordcloud-python
 
@@ -899,10 +521,6 @@ plt.figure(figsize=(15,8))
 plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')
 plt.show()
-
-
-# In[79]:
-
 
 from nltk.probability import FreqDist
 
@@ -925,10 +543,6 @@ plt.imshow(wordcloud_1, interpolation='bilinear')
 plt.axis('off')
 plt.show()
 
-
-# In[80]:
-
-
 # hashtag word cloud
 # code source- https://www.kaggle.com/code/nicolemeinie/sentiment-analysis-twitter-on-climate-change
 
@@ -948,15 +562,10 @@ plt.imshow(word_cloud_2, interpolation='bilinear')
 plt.axis('off')
 plt.show()
 
-
-# In[81]:
-
-
 # sentiment- positive negative neutral word cloud
 # code source & modify- https://medium.com/codex/making-wordcloud-of-tweets-using-python-ca114b7a4ef4
 
 # Define a function to generate word cloud for a given sentiment class
-
 def generate_wordcloud(sentiment_class):
     
     # Combine all tweets of the given sentiment class into a single string
@@ -974,50 +583,29 @@ def generate_wordcloud(sentiment_class):
     plt.show()
 
 # Generate word cloud for each sentiment class
-
 for sentiment in df_clean['sentiment'].unique():
     generate_wordcloud(sentiment)
 
 
 # # V. MACHINE LEARNING MODELS
 
-# In[82]:
-
-
 # create a copy to run machine learning models
-
 df_ml = df_clean.copy()
 
-
 # ## Feature extraction
-
-# ### Extracting URLs
-
-# In[83]:
-
+  # ### Extracting URLs
 
 # add a new column to the dataframe to store if a tweet contains URL or not
 # code source & modify- https://developers.google.com/edu/python/regular-expressions
-
 url_pattern = r'(https?://\S+)'
 df_ml['has_urls'] = df_ml['Embedded_text'].apply(lambda x: 1 if re.findall(url_pattern, x) else 0)
 
-
-# In[84]:
-
-
 # extract counts of URLs in each row of the 'Embedded_text' column
-
 df_ml['url_count'] = df_ml['Embedded_text'].apply(lambda x: len(re.findall(url_pattern, x)))
-
 
 # ### Extracting Images & Videos
 
-# In[85]:
-
-
 # Define function to check if each tweet contains an image
-
 def contains_image(row):
     text = row['Embedded_text']
     if 'pic.twitter.com' in text:
@@ -1027,20 +615,10 @@ def contains_image(row):
         # The tweet does not contain an image
         return False
 
-
-# In[86]:
-
-
 # Add a new column to the dataframe to indicate if each tweet contains an image
-
 df_ml['contains_image'] = df_ml.apply(contains_image, axis = 1)
 
-
-# In[87]:
-
-
 # define function to check if tweet contains images and return count
-
 def count_images(tweet):
     images = tweet.split()
     count = sum(image.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')) for image in images)
@@ -1049,12 +627,7 @@ def count_images(tweet):
 # extract count of images in each tweet
 df_ml['image_count'] = df_ml['Embedded_text'].apply(count_images)
 
-
-# In[88]:
-
-
 # define function to check if tweet contains images and return count
-
 def count_videos(tweet):
     videos = tweet.split()
     count = sum(video.lower().endswith('.mp4') for video in videos)
@@ -1063,15 +636,10 @@ def count_videos(tweet):
 # extract count of videos in each tweet
 df_ml['video_count'] = df_ml['Embedded_text'].apply(count_videos)
 
-
-# ### Extracting Hashtags
-
-# In[89]:
-
+  # ### Extracting Hashtags
 
 # Define function to check if each tweet contains a hashtag
 # code source & modify - https://www.kaggle.com/code/nicolemeinie/sentiment-analysis-twitter-on-climate-change
-
 def contains_hashtag(row):
     text = row['Embedded_text']
     if re.search(r'\#\w+', text):
@@ -1081,48 +649,24 @@ def contains_hashtag(row):
         # The tweet does not contain a hashtag
         return 0
 
-
-# In[90]:
-
-
 # Apply the function to the dataframe and create a new column
-
 df_ml['contains_hashtag'] = df_ml.apply(contains_hashtag, axis=1)
 
-
-# In[91]:
-
-
 # Define function to count number of hashtags in each tweet
-
 def count_hashtags(row):
     text = row['Embedded_text']
     hashtags = re.findall(r'#\w+', text)
     return len(hashtags)
 
-
-# In[92]:
-
-
 # Apply the function to the dataframe and create a new column for count of hashtags
-
 df_ml['hashtag_count'] = df_ml.apply(count_hashtags, axis=1)
 
-
-# ### Extracting words count 
-
-# In[93]:
-
+  # ### Extracting words count 
 
 # create new column with word count
-
 df_ml['word_count'] = df_ml['clean_text'].apply(lambda x: len(x.split()))
 
-
-# ### Extracting time (hour, day of week) of tweets
-
-# In[94]:
-
+  # ### Extracting time (hour, day of week) of tweets
 
 # code source & Modify- https://pynative.com/python-get-the-day-of-week/
 
@@ -1145,21 +689,13 @@ df_ml['time_slot'] = pd.cut(df_ml['hour'], bins=time_slots, labels=time_labels, 
 # drop timestamp column
 df_ml = df_ml.drop(['timestamp'], axis=1)
 
-
-# In[95]:
-
-
 #df_ml['comments'] = df_ml['comments'].fillna(0)
 #df_ml['comments'] = pd.to_numeric(df_ml['comments'], errors='coerce')
 #df_ml['time_slot'] = pd.to_numeric(df_ml['time_slot'], errors='coerce')
 # df_ml['sentiment_score'] = pd.to_numeric(df_ml['sentiment_score'], errors='coerce')
 #df_ml['length'] = pd.to_numeric(df_ml['length'], errors='coerce')
 
-
 # ## MODEL 1: LINEAR REGRESSION
-
-# In[127]:
-
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import hstack
@@ -1168,7 +704,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
-
 
 # Create TF-IDF matrix of tweet text
 tfidf = TfidfVectorizer()
@@ -1226,19 +761,8 @@ print('coefficients are : ')
 intercept_lr1 = lr1.intercept_
 coefs_lr1 = list(lr1.coef_)
 
-# Print the intercept and coefficients with their names- not including in printed report 
-# as coefficients of each word made the report 700 pages long.
-#print('Intercept:', intercept_lr1)
-#for feature, coefficient in zip(features + tfidf.get_feature_names(), coefs_lr1):
-    #print(f"{feature}: {coefficient}")
-
-
 # ### Cross Validation of Linear Regreesion Model
-
-# In[108]:
-
-
-# Cross validation using K-fold cross validation method
+  # Cross validation using K-fold cross validation method
 
 from sklearn.model_selection import cross_val_score, KFold
 
@@ -1251,9 +775,7 @@ Y = y #response variable
 kfold = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 
 # Perform K-fold cross-validation on the lr model
-
 cv_lr = cross_val_score(lr, X, y, cv=kfold)
-
 
 # Calculate the mean and standard deviation of the scores
 print('Average validation score of Linear Regression model is:', cv_lr.mean())
@@ -1261,9 +783,6 @@ print('The Standard deviation of Linear Regression is:', cv_lr.std())
 
 
 # ## MODEL 2: XG BOOST
-
-# In[123]:
-
 
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
@@ -1317,11 +836,7 @@ print("Accuracy of model: ", r2_xgb, '\n')
 
 
 # ### Cross Validation of XG Boost Model
-
-# In[124]:
-
-
-# Cross validation using K-fold cross validation method
+  # Cross validation using K-fold cross validation method
 
 # Set the number of folds
 num_folds = 10
@@ -1335,7 +850,6 @@ kfold = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 xgbm = xgb.XGBRegressor()
 
 # Perform K-fold cross-validation on the lr model
-
 cv_xgb = cross_val_score(xgbm, X, y, cv=kfold)
 
 # Calculate the mean and standard deviation of the scores
@@ -1344,9 +858,6 @@ print('The Standard deviation of XGBoost model is:', cv_xgb.std())
 
 
 # ## MODEL 3: RANDOM FOREST REGRESSOR
-
-# In[122]:
-
 
 from sklearn.ensemble import RandomForestRegressor
 
@@ -1393,11 +904,7 @@ print("Accuracy of model: ", accuracy_rf)
 
 
 # ### Cross Validation of Random Forest Regressor Model
-
-# In[ ]:
-
-
-# Cross validation using K-fold cross validation method
+  # Cross validation using K-fold cross validation method
 
 # Set the number of folds
 num_folds = 10
@@ -1408,7 +915,6 @@ Y = y #response variable
 kfold = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 
 # Perform K-fold cross-validation on the lr model
-
 cv_rf = cross_val_score(rf, X, y, cv=kfold)
 
 # Calculate the mean and standard deviation of the scores
@@ -1417,11 +923,6 @@ print('The Standard deviation of XGBoost model is:', cv_rf.std())
 
 
 # ### Comparison of three models
-
-# In[126]:
-
-
-# COde source & modify- https://realpython.com/how-to-use-numpy-arange/
 # storing performance metrices of three models in objects
 models = ['lr', 'model_xgb', 'rf']
 rmse = [rmse_lr, rmse_xgb, rmse_rf]
@@ -1445,7 +946,6 @@ plt.bar(r3, mae, color='blue', width=barWidth, edgecolor='white', label='MAE')
 plt.xlabel('Models')
 plt.xticks([r + barWidth for r in range(len(r2))], ['Linear Reg', 'XG Boost', 'SVR'])
 
-
 # Set the y-axis label
 plt.ylabel('Scores')
 
@@ -1455,3 +955,4 @@ plt.legend()
 # Show the plot
 plt.show()
 
+### END ###
